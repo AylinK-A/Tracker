@@ -68,7 +68,7 @@ final class NewTrackerViewController: UIViewController {
 
     private var state = NewTrackerState(
         title: "",
-        category: "Важное",
+        category: "",
         schedule: [],
         emoji: "",
         color: nil
