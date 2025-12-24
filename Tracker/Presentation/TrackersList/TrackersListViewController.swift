@@ -2,8 +2,8 @@ import UIKit
 
 final class TrackersListViewController: UIViewController {
 
-    private let trackerStore = TrackerStore()
     private let categoryStore = TrackerCategoryStore()
+    private lazy var trackerStore = TrackerStore(categoryStore: categoryStore)
     private let recordStore = TrackerRecordStore()
 
     // MARK: - State
@@ -26,19 +26,17 @@ final class TrackersListViewController: UIViewController {
         return button
     }()
 
-    private lazy var dateButton: UIButton = {
-        var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = .datePickerGray
-        config.baseForegroundColor = .datePickerBlack
-        config.cornerStyle = .medium
-        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
-
-        let button = UIButton(configuration: config)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
-        button.layer.masksToBounds = true
-        button.layer.cornerRadius = 8
-        button.setTitle(dateFormatter.string(from: selectedDate), for: .normal)
-        return button
+    private lazy var datePicker: UIDatePicker = {
+        let dp = UIDatePicker()
+        dp.datePickerMode = .date
+        dp.preferredDatePickerStyle = .compact   // как по дизайну
+        dp.locale = Locale(identifier: "ru_RU")
+        dp.calendar = Calendar(identifier: .gregorian)
+        dp.timeZone = .current
+        dp.overrideUserInterfaceStyle = .light
+        dp.date = selectedDate
+        dp.addTarget(self, action: #selector(datePickerChanged), for: .valueChanged)
+        return dp
     }()
 
     private lazy var searchController: UISearchController = {
@@ -96,15 +94,6 @@ final class TrackersListViewController: UIViewController {
 
     // MARK: - Private Properties
 
-    private lazy var dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = .current
-        formatter.dateFormat = "dd.MM.yy"
-        return formatter
-    }()
-
     private let layoutParams = LayoutParams(
         cellCount: 2,
         leftInset: 16,
@@ -154,9 +143,9 @@ final class TrackersListViewController: UIViewController {
             filterButton
         ])
 
-        filterButton.isHidden = true  // временно скрыла
+        filterButton.isHidden = true
         filterButton.isUserInteractionEnabled = false
-        
+
         setupNavigationBar()
         setupConstraints()
     }
@@ -171,7 +160,7 @@ final class TrackersListViewController: UIViewController {
 
         navigationItem.searchController = searchController
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: addTrackerButton)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: dateButton)
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: datePicker) // ✅
     }
 
     private func setupConstraints() {
@@ -183,11 +172,13 @@ final class TrackersListViewController: UIViewController {
             filterButton
         ].disableAutoresizingMasks()
 
+        datePicker.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
             addTrackerButton.heightAnchor.constraint(equalToConstant: 42),
             addTrackerButton.widthAnchor.constraint(equalTo: addTrackerButton.heightAnchor),
 
-            dateButton.heightAnchor.constraint(equalToConstant: 34),
+            datePicker.heightAnchor.constraint(equalToConstant: 34),
 
             trackersCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             trackersCollectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -208,7 +199,6 @@ final class TrackersListViewController: UIViewController {
 
     private func setupActions() {
         addTrackerButton.addTarget(self, action: #selector(addTrackerButtonDidTap), for: .touchUpInside)
-        dateButton.addTarget(self, action: #selector(dateButtonDidTap), for: .touchUpInside)
     }
 
     // MARK: - Core Data
@@ -243,27 +233,18 @@ final class TrackersListViewController: UIViewController {
         present(navigationVC, animated: true)
     }
 
-    @objc private func dateButtonDidTap() {
-        let vc = DatePickerPopoverViewController(
-            selectedDate: selectedDate,
-            onPick: { [weak self] date in
-                self?.applySelectedDate(date)
-            }
-        )
-        vc.modalPresentationStyle = .popover
-        if let pop = vc.popoverPresentationController {
-            pop.sourceView = dateButton
-            pop.sourceRect = dateButton.bounds
-            pop.permittedArrowDirections = .up
-        }
-        present(vc, animated: true)
+    @objc private func datePickerChanged() {
+        applySelectedDate(datePicker.date.excludeTime())
     }
 
     // MARK: - Private Methods
 
     private func applySelectedDate(_ date: Date) {
         selectedDate = date.excludeTime()
-        dateButton.setTitle(dateFormatter.string(from: selectedDate), for: .normal)
+
+        if datePicker.date.excludeTime() != selectedDate {
+            datePicker.date = selectedDate
+        }
 
         loadCompletedFromCoreData()
         filterTrackers(for: selectedDate)
@@ -463,61 +444,7 @@ extension TrackersListViewController: NewTrackerViewControllerDelegate {
         }
 
         loadFromCoreData()
-        loadCompletedFromCoreData()
-        filterTrackers(for: selectedDate)
-    }
-}
-
-//
-// MARK: - Date Picker Popover (Inline Calendar)
-//
-
-private final class DatePickerPopoverViewController: UIViewController {
-
-    private let onPick: (Date) -> Void
-    private var currentDate: Date
-
-    private lazy var picker: UIDatePicker = {
-        let dp = UIDatePicker()
-        dp.datePickerMode = .date
-        dp.preferredDatePickerStyle = .inline
-        dp.locale = Locale(identifier: "ru_RU")
-        dp.calendar = Calendar(identifier: .gregorian)
-        dp.timeZone = .current
-        dp.overrideUserInterfaceStyle = .light
-        dp.date = currentDate
-        dp.addTarget(self, action: #selector(valueChanged), for: .valueChanged)
-        return dp
-    }()
-
-    init(selectedDate: Date, onPick: @escaping (Date) -> Void) {
-        self.currentDate = selectedDate
-        self.onPick = onPick
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-
-        view.addSubview(picker)
-        picker.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            picker.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
-            picker.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
-            picker.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
-            picker.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -8)
-        ])
-
-        preferredContentSize = CGSize(width: 320, height: 360)
-    }
-
-    @objc private func valueChanged() {
-        let d = picker.date.excludeTime()
-        onPick(d)
+        applySelectedDate(selectedDate)
     }
 }
 

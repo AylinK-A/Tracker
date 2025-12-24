@@ -56,6 +56,8 @@ final class TrackerStore: NSObject {
         cd.color = tracker.color
         cd.createdAt = Date()
         cd.category = category
+        
+        category.mutableSetValue(forKey: "trackers").add(cd)
 
         let weekdayObjects = tracker.schedule.map { day -> WeekdayCoreData in
             let w = WeekdayCoreData(context: context)
@@ -123,7 +125,10 @@ final class TrackerStore: NSObject {
         ]
 
         if let weekday = currentWeekday {
-            request.predicate = NSPredicate(format: "ANY schedule.rawValue == %d", weekday.rawValue)
+            request.predicate = NSPredicate(
+                    format: "schedule.@count == 0 OR ANY schedule.rawValue == %d",
+                    weekday.rawValue
+                )
         } else {
             request.predicate = nil
         }

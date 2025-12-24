@@ -40,7 +40,8 @@ final class TrackerCategoryStore: NSObject {
     // MARK: - Public
 
     func fetchAll() -> [TrackerCategoryCoreData] {
-        fetchedResultsController.fetchedObjects ?? []
+        try? fetchedResultsController.performFetch()
+        return fetchedResultsController.fetchedObjects ?? []
     }
 
     func findOrCreateCategory(title: String) throws -> TrackerCategoryCoreData {
