@@ -11,6 +11,7 @@ final class TrackerStore: NSObject {
 
     private let context: NSManagedObjectContext
     private var currentWeekday: Weekday? = .monday
+    private let categoryStore: TrackerCategoryStore
 
     private var insertedSections: IndexSet?
     private var deletedSections: IndexSet?
@@ -23,13 +24,48 @@ final class TrackerStore: NSObject {
         updateFetchResultsController()
     }()
 
-    init(context: NSManagedObjectContext = CoreDataStack.shared.context) {
-        self.context = context
-        super.init()
-        _ = fetchedResultsController
+    init(
+            context: NSManagedObjectContext = CoreDataStack.shared.context,
+            categoryStore: TrackerCategoryStore = TrackerCategoryStore()
+        ) {
+            self.context = context
+            self.categoryStore = categoryStore
+            super.init()
+            _ = fetchedResultsController
     }
 
     // MARK: - Public
+    func fetchTrackerCoreData(by id: UUID) throws -> TrackerCoreData {
+        let request: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
+        request.predicate = NSPredicate(format: "trackerID == %@", id as CVarArg)
+        request.fetchLimit = 1
+
+        guard let result = try context.fetch(request).first else {
+            throw NSError(domain: "TrackerStore", code: 404, userInfo: [NSLocalizedDescriptionKey: "Tracker not found"])
+        }
+        return result
+    }
+    
+    func addTracker(_ tracker: Tracker, categoryTitle: String) throws {
+        let category = try categoryStore.findOrCreateCategory(title: categoryTitle)
+
+        let cd = TrackerCoreData(context: context)
+        cd.trackerID = tracker.id
+        cd.title = tracker.title
+        cd.emoji = tracker.emoji
+        cd.color = tracker.color
+        cd.createdAt = Date()
+        cd.category = category
+
+        let weekdayObjects = tracker.schedule.map { day -> WeekdayCoreData in
+            let w = WeekdayCoreData(context: context)
+            w.rawValue = Int16(day.rawValue)
+            return w
+        }
+        cd.schedule = NSSet(array: weekdayObjects)
+
+        try context.save()
+    }
 
     func setCurrentWeekday(_ weekday: Weekday?) {
         currentWeekday = weekday
@@ -82,7 +118,7 @@ final class TrackerStore: NSObject {
     private func makeFetchRequest() -> NSFetchRequest<TrackerCoreData> {
         let request = TrackerCoreData.fetchRequest()
         request.sortDescriptors = [
-            NSSortDescriptor(keyPath: \TrackerCoreData.category?.title, ascending: true),
+            NSSortDescriptor(key: "category.title", ascending: true),
             NSSortDescriptor(keyPath: \TrackerCoreData.title, ascending: true)
         ]
 
@@ -100,7 +136,7 @@ final class TrackerStore: NSObject {
         let controller = NSFetchedResultsController(
             fetchRequest: request,
             managedObjectContext: context,
-            sectionNameKeyPath: #keyPath(TrackerCoreData.category.title),
+            sectionNameKeyPath: "category.title",
             cacheName: nil
         )
         controller.delegate = self

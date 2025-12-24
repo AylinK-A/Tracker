@@ -11,27 +11,11 @@ final class CoreDataStack {
     }
 
     private init() {
-        persistentContainer = NSPersistentContainer(name: "TrackerDataModel")
-
+        persistentContainer = NSPersistentContainer(name: "TrackerDataModel") 
         persistentContainer.loadPersistentStores { _, error in
-            if let error = error as NSError? {
-                fatalError("Unresolved Core Data error \(error), \(error.userInfo)")
+            if let error = error {
+                fatalError("CoreData load error: \(error)")
             }
-        }
-
-        persistentContainer.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        persistentContainer.viewContext.automaticallyMergesChangesFromParent = true
-    }
-
-    func saveContext() {
-        let context = persistentContainer.viewContext
-        guard context.hasChanges else { return }
-
-        do {
-            try context.save()
-        } catch {
-            let error = error as NSError
-            fatalError("Unresolved Core Data save error \(error), \(error.userInfo)")
         }
     }
 }

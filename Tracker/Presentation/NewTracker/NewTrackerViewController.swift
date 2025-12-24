@@ -68,7 +68,7 @@ final class NewTrackerViewController: UIViewController {
 
     private var state = NewTrackerState(
         title: "",
-        category: "",
+        categoryTitle: "",
         schedule: [],
         emoji: "",
         color: nil
@@ -184,22 +184,30 @@ extension NewTrackerViewController: UITableViewDataSource {
         switch section {
 
         case .enterName:
-            let cell = tableView.dequeueReusableCell(
+            guard let cell = tableView.dequeueReusableCell(
                 withIdentifier: EnterNameCell.reuseID,
                 for: indexPath
-            ) as! EnterNameCell
+            ) as? EnterNameCell else {
+                return UITableViewCell()
+            }
+
             cell.delegate = self
             return cell
 
         case .parameters:
-            let type = ParameterType(rawValue: indexPath.row)!
-            let cell = tableView.dequeueReusableCell(
+            guard let type = ParameterType(rawValue: indexPath.row) else {
+                return UITableViewCell()
+            }
+
+            guard let cell = tableView.dequeueReusableCell(
                 withIdentifier: ParameterCell.reuseID,
                 for: indexPath
-            ) as! ParameterCell
+            ) as? ParameterCell else {
+                return UITableViewCell()
+            }
 
-            let subtitle = type == .category
-                ? state.category
+            let subtitle = (type == .category)
+                ? state.categoryTitle
                 : Weekday.formattedWeekdays(Array(state.schedule))
 
             cell.configure(
@@ -213,10 +221,13 @@ extension NewTrackerViewController: UITableViewDataSource {
             return cell
 
         case .customization:
-            let cell = tableView.dequeueReusableCell(
+            guard let cell = tableView.dequeueReusableCell(
                 withIdentifier: CustomizationCell.reuseID,
                 for: indexPath
-            ) as! CustomizationCell
+            ) as? CustomizationCell else {
+                return UITableViewCell()
+            }
+
             cell.delegate = self
             cell.configure(
                 selectedEmoji: state.emoji,
@@ -267,10 +278,12 @@ extension NewTrackerViewController: ScheduleViewControllerDelegate {
 
     func getConfiguredSchedule(_ schedule: Set<Weekday>) {
         state.schedule = schedule
+
         let indexPath = IndexPath(
             row: ParameterType.schedule.rawValue,
             section: SectionType.parameters.rawValue
         )
+
         tableView.reloadRows(at: [indexPath], with: .none)
     }
 }

@@ -3,44 +3,57 @@ import CoreData
 final class TrackerCategoryStore: NSObject {
 
     private let context: NSManagedObjectContext
+    private let fetchedResultsController: NSFetchedResultsController<TrackerCategoryCoreData>
 
-    private lazy var fetchedResultsController: NSFetchedResultsController<TrackerCategoryCoreData> = {
-        let request = TrackerCategoryCoreData.fetchRequest()
+    // MARK: - Init
+
+    init(context: NSManagedObjectContext = CoreDataStack.shared.context) {
+        self.context = context
+
+        let request = NSFetchRequest<TrackerCategoryCoreData>(
+            entityName: "TrackerCategoryCoreData"
+        )
+
+        request.entity = NSEntityDescription.entity(
+            forEntityName: "TrackerCategoryCoreData",
+            in: context
+        )
+
         request.sortDescriptors = [
             NSSortDescriptor(key: "title", ascending: true)
         ]
 
-        let frc = NSFetchedResultsController(
+        self.fetchedResultsController = NSFetchedResultsController(
             fetchRequest: request,
             managedObjectContext: context,
             sectionNameKeyPath: nil,
             cacheName: nil
         )
-        frc.delegate = self
-        return frc
-    }()
 
-    init(context: NSManagedObjectContext = CoreDataStack.shared.context) {
-        self.context = context
         super.init()
+
+        fetchedResultsController.delegate = self
         try? fetchedResultsController.performFetch()
     }
+
+
+    // MARK: - Public
 
     func fetchAll() -> [TrackerCategoryCoreData] {
         fetchedResultsController.fetchedObjects ?? []
     }
 
     func findOrCreateCategory(title: String) throws -> TrackerCategoryCoreData {
-        let request = TrackerCategoryCoreData.fetchRequest()
-        request.predicate = NSPredicate(format: "title == %@", title)
-        request.fetchLimit = 1
-
-        if let category = try context.fetch(request).first {
-            return category
+        if let existing = fetchedResultsController.fetchedObjects?
+            .first(where: { $0.title == title }) {
+            return existing
         }
 
         let category = TrackerCategoryCoreData(context: context)
         category.title = title
+        category.createdAt = Date()
+        category.categoryID = UUID()
+
         try context.save()
         return category
     }

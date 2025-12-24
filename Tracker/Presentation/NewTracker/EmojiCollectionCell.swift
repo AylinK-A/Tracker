@@ -12,6 +12,10 @@ final class EmojiCollectionCell: UICollectionViewCell {
         return l
     }()
 
+    override var isSelected: Bool {
+        didSet { updateSelection() }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -24,28 +28,27 @@ final class EmojiCollectionCell: UICollectionViewCell {
             label.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
 
-        // базовый вид
         contentView.layer.cornerRadius = 16
         contentView.layer.masksToBounds = true
-        contentView.backgroundColor = .clear
 
-        // ВАЖНО: выделение через selectedBackgroundView — самый надежный способ
-        let selected = UIView(frame: bounds)
-        selected.layer.cornerRadius = 16
-        selected.layer.masksToBounds = true
-        selected.backgroundColor = UIColor.systemGray5
-        selectedBackgroundView = selected
+        updateSelection()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        selectedBackgroundView?.frame = bounds
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isSelected = false
+        updateSelection()
     }
 
     func configure(emoji: String) {
         label.text = emoji
+        updateSelection()
+    }
+
+    private func updateSelection() {
+        contentView.backgroundColor = isSelected ? UIColor.systemGray5 : .clear
     }
 }
 

@@ -42,7 +42,7 @@ final class CustomizationCell: UITableViewCell {
         cv.isScrollEnabled = false
 
         cv.allowsSelection = true
-        cv.allowsMultipleSelection = false
+        cv.allowsMultipleSelection = true
 
         cv.dataSource = self
         cv.delegate = self
@@ -84,7 +84,6 @@ final class CustomizationCell: UITableViewCell {
         collectionHeightConstraint?.constant = collectionView.collectionViewLayout.collectionViewContentSize.height
     }
 
-    // Ключевой момент: UITableView получает правильную высоту ячейки
     override func systemLayoutSizeFitting(_ targetSize: CGSize,
                                           withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
                                           verticalFittingPriority: UILayoutPriority) -> CGSize {
@@ -107,7 +106,6 @@ final class CustomizationCell: UITableViewCell {
         collectionView.reloadData()
         collectionView.layoutIfNeeded()
 
-        // ВАЖНО: после reloadData нужно явно “выделить” выбранные элементы
         if let selectedEmojiIndex {
             let ip = IndexPath(item: selectedEmojiIndex, section: Section.emoji.rawValue)
             collectionView.selectItem(at: ip, animated: false, scrollPosition: [])
@@ -142,48 +140,79 @@ extension CustomizationCell: UICollectionViewDataSource, UICollectionViewDelegat
     func collectionView(_ collectionView: UICollectionView,
                         cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 
-        let section = Section(rawValue: indexPath.section)!
+        guard let section = Section(rawValue: indexPath.section) else { return UICollectionViewCell() }
 
         switch section {
         case .emoji:
-            let cell = collectionView.dequeueReusableCell(
+            guard let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: EmojiCollectionCell.reuseID,
                 for: indexPath
-            ) as! EmojiCollectionCell
-            cell.configure(emoji: emojis[indexPath.item]) // ✅ без isSelected
+            ) as? EmojiCollectionCell else {
+                return UICollectionViewCell()
+            }
+
+            cell.configure(emoji: emojis[indexPath.item])
             return cell
 
         case .color:
-            let cell = collectionView.dequeueReusableCell(
+            guard let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: ColorCollectionCell.reuseID,
                 for: indexPath
-            ) as! ColorCollectionCell
-            cell.configure(color: colors[indexPath.item], isSelected: indexPath.item == selectedColorIndex)
+            ) as? ColorCollectionCell else {
+                return UICollectionViewCell()
+            }
+
+            cell.configure(
+                color: colors[indexPath.item],
+                isSelected: indexPath.item == selectedColorIndex
+            )
             return cell
         }
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let section = Section(rawValue: indexPath.section)!
+        guard let section = Section(rawValue: indexPath.section) else { return }
 
         switch section {
         case .emoji:
+            if let prev = selectedEmojiIndex, prev != indexPath.item {
+                collectionView.deselectItem(
+                    at: IndexPath(item: prev, section: Section.emoji.rawValue),
+                    animated: false
+                )
+            }
             selectedEmojiIndex = indexPath.item
-
-            // Для emoji подсветку делает selectedBackgroundView, поэтому просто обновим выделение
-            // (reloadData не обязателен, но можно оставить, если нужно обновить другие)
-            collectionView.reloadSections(IndexSet(integer: Section.emoji.rawValue))
-
-            // ВАЖНО: после reloadSections снова выбираем item (иначе визуально может пропасть)
-            let ip = IndexPath(item: indexPath.item, section: Section.emoji.rawValue)
-            collectionView.selectItem(at: ip, animated: false, scrollPosition: [])
-
             delegate?.customizationCell(self, didPickEmoji: emojis[indexPath.item])
 
         case .color:
+            if let prev = selectedColorIndex, prev != indexPath.item {
+                collectionView.deselectItem(
+                    at: IndexPath(item: prev, section: Section.color.rawValue),
+                    animated: false
+                )
+            }
             selectedColorIndex = indexPath.item
+
             collectionView.reloadSections(IndexSet(integer: Section.color.rawValue))
             delegate?.customizationCell(self, didPickColor: colors[indexPath.item])
+        }
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        didDeselectItemAt indexPath: IndexPath) {
+        guard let section = Section(rawValue: indexPath.section) else { return }
+
+        switch section {
+        case .emoji:
+            if selectedEmojiIndex == indexPath.item {
+                let ip = IndexPath(item: indexPath.item, section: Section.emoji.rawValue)
+                collectionView.selectItem(at: ip, animated: false, scrollPosition: [])
+            }
+        case .color:
+            if selectedColorIndex == indexPath.item {
+                let ip = IndexPath(item: indexPath.item, section: Section.color.rawValue)
+                collectionView.selectItem(at: ip, animated: false, scrollPosition: [])
+            }
         }
     }
 
@@ -194,13 +223,18 @@ extension CustomizationCell: UICollectionViewDataSource, UICollectionViewDelegat
 
         guard kind == UICollectionView.elementKindSectionHeader else { return UICollectionReusableView() }
 
-        let header = collectionView.dequeueReusableSupplementaryView(
+        guard let header = collectionView.dequeueReusableSupplementaryView(
             ofKind: kind,
             withReuseIdentifier: CustomizationHeaderView.reuseID,
             for: indexPath
-        ) as! CustomizationHeaderView
+        ) as? CustomizationHeaderView else {
+            return UICollectionReusableView()
+        }
 
-        let section = Section(rawValue: indexPath.section)!
+        guard let section = Section(rawValue: indexPath.section) else {
+            return UICollectionReusableView()
+        }
+
         header.configure(title: section == .emoji ? "Emoji" : "Цвет")
         return header
     }
@@ -211,7 +245,6 @@ extension CustomizationCell: UICollectionViewDataSource, UICollectionViewDelegat
         CGSize(width: collectionView.bounds.width, height: 40)
     }
 
-    // 6 в ряд, высота 52 (как в макете)
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
