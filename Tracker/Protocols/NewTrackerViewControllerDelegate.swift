@@ -1,3 +1,5 @@
 protocol NewTrackerViewControllerDelegate: AnyObject {
-    func createTracker(from config: NewTrackerState)
+    func createTracker(from state: NewTrackerState)
 }
+
+
