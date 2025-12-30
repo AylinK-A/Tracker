@@ -251,8 +251,29 @@ extension NewTrackerViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
 
         guard SectionType(rawValue: indexPath.section) == .parameters else { return }
+        guard let type = ParameterType(rawValue: indexPath.row) else { return }
 
-        if indexPath.row == ParameterType.schedule.rawValue {
+        switch type {
+        case .category:
+            let vm = CategoryListViewModel(selectedTitle: state.categoryTitle)
+            let vc = CategoryListViewController(viewModel: vm)
+
+            vc.onCategoryPicked = { [weak self] category in
+                guard let self else { return }
+                self.state.categoryTitle = category.title
+
+                let indexPath = IndexPath(
+                    row: ParameterType.category.rawValue,
+                    section: SectionType.parameters.rawValue
+                )
+                self.tableView.reloadRows(at: [indexPath], with: .none)
+            }
+
+            let nav = UINavigationController(rootViewController: vc)
+            nav.modalPresentationStyle = .pageSheet
+            present(nav, animated: true)
+
+        case .schedule:
             navigationController?.pushViewController(scheduleVC, animated: true)
         }
     }
