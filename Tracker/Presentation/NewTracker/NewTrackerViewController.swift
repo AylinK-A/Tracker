@@ -6,6 +6,15 @@ final class NewTrackerViewController: UIViewController {
 
     weak var delegate: NewTrackerViewControllerDelegate?
 
+    // MARK: - Edit/Create Mode
+
+    enum Mode {
+        case create
+        case edit(trackerID: UUID, completedDays: Int)
+    }
+
+    private let mode: Mode
+
     // MARK: - Types
 
     private enum SectionType: Int, CaseIterable {
@@ -20,6 +29,15 @@ final class NewTrackerViewController: UIViewController {
     }
 
     // MARK: - Views
+
+    private lazy var daysLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 32, weight: .bold)
+        label.textColor = .ypBlack
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
 
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
@@ -38,21 +56,34 @@ final class NewTrackerViewController: UIViewController {
     }()
 
     private lazy var cancelButton: UIButton = {
-        let button = UIButton()
+        let button = UIButton(type: .custom)
         button.setTitle("Отменить", for: .normal)
+
         button.setTitleColor(.ypRed, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.ypRed.cgColor
         button.layer.cornerRadius = 16
+        button.layer.masksToBounds = true
+
         return button
     }()
 
     private lazy var createButton: UIButton = {
-        let button = UIButton()
+        let button = UIButton(type: .custom)
         button.setTitle("Создать", for: .normal)
-        button.backgroundColor = .ypGray
+
+        // ✅ текст должен быть всегда видимым
+        button.setTitleColor(.white, for: .normal)
+        button.setTitleColor(.white.withAlphaComponent(0.6), for: .disabled)
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+
         button.layer.cornerRadius = 16
+        button.layer.masksToBounds = true
+
         button.isEnabled = false
+        // фон выставим через updateCreateButtonUI()
         return button
     }()
 
@@ -74,12 +105,26 @@ final class NewTrackerViewController: UIViewController {
         color: nil
     ) {
         didSet {
-            createButton.isEnabled = state.isReady
-            createButton.backgroundColor = state.isReady ? .ypBlack : .ypGray
+            updateCreateButtonUI()
         }
     }
 
     private let scheduleVC = ScheduleViewController()
+
+    // MARK: - Init
+
+    init(mode: Mode, initialState: NewTrackerState? = nil) {
+        self.mode = mode
+        super.init(nibName: nil, bundle: nil)
+
+        if let initialState {
+            self.state = initialState
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     // MARK: - Lifecycle
 
@@ -92,20 +137,38 @@ final class NewTrackerViewController: UIViewController {
 
     private func setup() {
         view.backgroundColor = .ypWhite
-        navigationItem.title = "Новая привычка"
 
         tableView.dataSource = self
         tableView.delegate = self
         scheduleVC.delegate = self
 
+        switch mode {
+        case .create:
+            navigationItem.title = "Новая привычка"
+            createButton.setTitle("Создать", for: .normal)
+            daysLabel.isHidden = true
+
+        case .edit(_, let completedDays):
+            navigationItem.title = "Редактирование привычки"
+            createButton.setTitle("Сохранить", for: .normal)
+            daysLabel.isHidden = false
+            daysLabel.text = "\(completedDays) \(pluralDays(completedDays))"
+        }
+
+        view.addSubview(daysLabel)
         view.addSubview(tableView)
         view.addSubview(buttonStackView)
 
+        daysLabel.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
         buttonStackView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            daysLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+            daysLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            daysLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            tableView.topAnchor.constraint(equalTo: daysLabel.bottomAnchor, constant: 16),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: buttonStackView.topAnchor, constant: -16),
@@ -118,12 +181,26 @@ final class NewTrackerViewController: UIViewController {
 
         setupActions()
         setupBackgroundTap()
+
+        updateCreateButtonUI()
     }
 
-    // ❗️Gesture ТОЛЬКО на фоне tableView, не на всём view
+    private func updateCreateButtonUI() {
+        createButton.isEnabled = state.isReady
+
+        if state.isReady {
+            createButton.backgroundColor = .black
+        } else {
+            createButton.backgroundColor = UIColor { trait in
+                trait.userInterfaceStyle == .dark
+                ? UIColor(white: 0.26, alpha: 1)
+                : UIColor(white: 0.80, alpha: 1)
+            }
+        }
+    }
+
     private func setupBackgroundTap() {
         let backgroundView = UIView()
-        backgroundView.backgroundColor = .clear
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
         tap.cancelsTouchesInView = false
@@ -148,8 +225,26 @@ final class NewTrackerViewController: UIViewController {
     }
 
     @objc private func didTapCreate() {
-        delegate?.createTracker(from: state)
+        switch mode {
+        case .create:
+            delegate?.createTracker(from: state)
+        case .edit(let trackerID, _):
+            delegate?.updateTracker(id: trackerID, from: state)
+        }
         dismiss(animated: true)
+    }
+
+    // MARK: - Private
+
+    private func pluralDays(_ value: Int) -> String {
+        let mod10 = value % 10
+        let mod100 = value % 100
+        switch (mod100, mod10) {
+        case (11...14, _): return "дней"
+        case (_, 1): return "день"
+        case (_, 2...4): return "дня"
+        default: return "дней"
+        }
     }
 }
 
@@ -192,6 +287,7 @@ extension NewTrackerViewController: UITableViewDataSource {
             }
 
             cell.delegate = self
+            cell.configure(text: state.title)
             return cell
 
         case .parameters:

@@ -15,7 +15,7 @@ final class CategoryActionsViewController: UIViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = .ypWhite
+        view.backgroundColor = .ypBackground
         view.layer.cornerRadius = 16
         view.clipsToBounds = true
 

@@ -10,18 +10,8 @@ final class TrackerCategoryStore: NSObject {
     init(context: NSManagedObjectContext = CoreDataStack.shared.context) {
         self.context = context
 
-        let request = NSFetchRequest<TrackerCategoryCoreData>(
-            entityName: "TrackerCategoryCoreData"
-        )
-
-        request.entity = NSEntityDescription.entity(
-            forEntityName: "TrackerCategoryCoreData",
-            in: context
-        )
-
-        request.sortDescriptors = [
-            NSSortDescriptor(key: "title", ascending: true)
-        ]
+        let request: NSFetchRequest<TrackerCategoryCoreData> = TrackerCategoryCoreData.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
 
         self.fetchedResultsController = NSFetchedResultsController(
             fetchRequest: request,
@@ -36,7 +26,6 @@ final class TrackerCategoryStore: NSObject {
         try? fetchedResultsController.performFetch()
     }
 
-
     // MARK: - Public
 
     func fetchAll() -> [TrackerCategoryCoreData] {
@@ -45,72 +34,70 @@ final class TrackerCategoryStore: NSObject {
     }
 
     func findOrCreateCategory(title: String) throws -> TrackerCategoryCoreData {
-        if let existing = fetchedResultsController.fetchedObjects?
-            .first(where: { $0.title == title }) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw NSError(domain: "TrackerCategoryStore", code: 1, userInfo: [NSLocalizedDescriptionKey: "Empty title"])
+        }
+
+        let request: NSFetchRequest<TrackerCategoryCoreData> = TrackerCategoryCoreData.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "title ==[c] %@", trimmed)
+        if let existing = try context.fetch(request).first {
+            if existing.title != trimmed {
+                existing.title = trimmed
+                try context.save()
+                try fetchedResultsController.performFetch()
+            }
             return existing
         }
 
         let category = TrackerCategoryCoreData(context: context)
-        category.title = title
+        category.title = trimmed
         category.createdAt = Date()
         category.categoryID = UUID()
 
         try context.save()
+        try fetchedResultsController.performFetch()
+
         return category
     }
-    
+
     // MARK: - Domain API (для ViewModel/экрана)
 
     func fetchCategories() -> [TrackerCategory] {
         let coreDataObjects = fetchAll()
-
         return coreDataObjects.compactMap { object in
             guard let title = object.title else { return nil }
             return TrackerCategory(title: title, trackers: [])
         }
     }
-    
+
     func deleteCategory(objectID: NSManagedObjectID) throws {
         let object = try context.existingObject(with: objectID)
         context.delete(object)
         try context.save()
-        try? fetchedResultsController.performFetch()
+        try fetchedResultsController.performFetch()
     }
 
     func renameCategory(objectID: NSManagedObjectID, newTitle: String) throws {
         let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
+        let request: NSFetchRequest<TrackerCategoryCoreData> = TrackerCategoryCoreData.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "title ==[c] %@", trimmed)
+
+        if let existing = try context.fetch(request).first,
+           existing.objectID != objectID {
+            return
+        }
+
         guard let category = try context.existingObject(with: objectID) as? TrackerCategoryCoreData else { return }
         category.title = trimmed
 
         try context.save()
-        try? fetchedResultsController.performFetch()
+        try fetchedResultsController.performFetch()
     }
-
-    func createCategoryIfNeeded(title: String) throws -> TrackerCategory {
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return TrackerCategory(title: title, trackers: [])
-        }
-
-        if let existing = fetchedResultsController.fetchedObjects?
-            .first(where: { ($0.title ?? "").caseInsensitiveCompare(trimmed) == .orderedSame }) {
-
-            return TrackerCategory(title: existing.title ?? trimmed, trackers: [])
-        }
-
-        let category = TrackerCategoryCoreData(context: context)
-        category.title = trimmed
-        category.createdAt = Date()
-        category.categoryID = UUID()
-
-        try context.save()
-        try? fetchedResultsController.performFetch()
-
-        return TrackerCategory(title: trimmed, trackers: [])
-    }
-
 }
 
 extension TrackerCategoryStore: NSFetchedResultsControllerDelegate {}

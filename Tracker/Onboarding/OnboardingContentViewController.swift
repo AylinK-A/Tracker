@@ -8,33 +8,23 @@ final class OnboardingContentViewController: UIViewController {
     // MARK: - Private
     private let model: OnboardingPageModel
 
-    private let backgroundImageView: UIImageView = {
-        let iv = UIImageView()
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.contentMode = .scaleAspectFill
-        iv.clipsToBounds = true
-        return iv
-    }()
-
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 32, weight: .bold)
-        label.textColor = .ypBlack
-        label.numberOfLines = 0
-        label.textAlignment = .center
-        return label
-    }()
+    private let backgroundImageView = UIImageView()
+    private let titleLabel = UILabel()
 
     private lazy var actionButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.translatesAutoresizingMaskIntoConstraints = false
-        b.setTitleColor(.white, for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        b.backgroundColor = .ypBlack
-        b.layer.cornerRadius = 16
-        b.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
-        return b
+        let button = UIButton(type: .custom)
+        button.setTitle(model.buttonTitle, for: .normal)
+
+        button.backgroundColor = .ypBlackrealy
+        button.setTitleColor(.ypRealyWhite, for: .normal)
+
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+
+        button.layer.cornerRadius = 16
+        button.layer.masksToBounds = true
+
+        button.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
+        return button
     }()
 
     // MARK: - Init
@@ -43,29 +33,35 @@ final class OnboardingContentViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        applyModel()
     }
 
-    private func applyModel() {
-        backgroundImageView.image = UIImage(named: model.backgroundImageName)
-        titleLabel.text = model.title
-        actionButton.setTitle(model.buttonTitle, for: .normal)
-    }
-
+    // MARK: - UI
     private func setupUI() {
-        view.backgroundColor = .black
+        view.backgroundColor = .ypBackground
+
+        backgroundImageView.image = UIImage(named: model.backgroundImageName)
+        backgroundImageView.contentMode = .scaleAspectFill
+        backgroundImageView.clipsToBounds = true
+
+        titleLabel.text = model.title
+        titleLabel.numberOfLines = 0
+        titleLabel.textAlignment = .center
+        titleLabel.font = .systemFont(ofSize: 32, weight: .bold)
+        titleLabel.textColor = .ypBlack
 
         view.addSubview(backgroundImageView)
         view.addSubview(titleLabel)
         view.addSubview(actionButton)
+
+        backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        actionButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             backgroundImageView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -74,18 +70,19 @@ final class OnboardingContentViewController: UIViewController {
             backgroundImageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 69),
+            titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 40),
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             titleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
 
+            actionButton.heightAnchor.constraint(equalToConstant: 60),
             actionButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             actionButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            actionButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -50),
-            actionButton.heightAnchor.constraint(equalToConstant: 60)
+            actionButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -50)
         ])
     }
 
-    @objc private func buttonTapped() {
+    // MARK: - Actions
+    @objc private func didTapButton() {
         onButtonTap?()
     }
 }

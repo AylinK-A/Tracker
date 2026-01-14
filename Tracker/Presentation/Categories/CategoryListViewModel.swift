@@ -50,10 +50,13 @@ final class CategoryListViewModel {
 
     func addCategory(title: String) {
         do {
-            let createdOrExisting = try store.createCategoryIfNeeded(title: title)
-            selectedTitle = createdOrExisting.title
+            let cd = try store.findOrCreateCategory(title: title)
+
+            let domain = TrackerCategory(title: cd.title ?? "", trackers: [])
+            selectedTitle = domain.title
+
             load()
-            onSelectCategory?(createdOrExisting)
+            onSelectCategory?(domain)
         } catch {
             onError?(error)
         }
@@ -64,10 +67,12 @@ final class CategoryListViewModel {
     func rename(at index: Int, to newTitle: String) {
         do {
             let objectID = items[index].objectID
+            let oldTitle = title(at: index)
+
             try store.renameCategory(objectID: objectID, newTitle: newTitle)
 
-            if selectedTitle == title(at: index) {
-                selectedTitle = newTitle
+            if selectedTitle == oldTitle {
+                selectedTitle = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
             }
             load()
         } catch {
