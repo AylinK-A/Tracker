@@ -59,7 +59,6 @@ final class StatisticsViewController: UIViewController {
         navigationItem.title = NSLocalizedString("tab_statistics", comment: "")
         navigationController?.navigationBar.prefersLargeTitles = true
 
-        // ✅ подписка на обновление записей трекеров
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleTrackerRecordChange),
@@ -119,6 +118,8 @@ final class StatisticsViewController: UIViewController {
     // MARK: - Update
 
     private func updateUI() {
+        recordStore.refresh()
+
         let stats = calculateStats()
 
         bestPeriodCard.setValue(stats.bestPeriod)
@@ -155,7 +156,6 @@ final class StatisticsViewController: UIViewController {
             return (id: id, date: date.excludeTime())
         }
 
-        // ✅ records может оказаться пустым после compactMap
         guard !records.isEmpty else {
             return Stats(bestPeriod: 0, perfectDays: 0, completedCount: 0, average: 0)
         }
