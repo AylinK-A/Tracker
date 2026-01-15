@@ -31,6 +31,14 @@ final class CustomizationCell: UITableViewCell {
 
     private var collectionHeightConstraint: NSLayoutConstraint?
 
+    private lazy var containerView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .ypBackground
+        v.layer.cornerRadius = 16
+        v.layer.masksToBounds = true
+        return v
+    }()
+
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.minimumLineSpacing = 0
@@ -60,14 +68,25 @@ final class CustomizationCell: UITableViewCell {
 
         selectionStyle = .none
 
-        contentView.addSubview(collectionView)
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+
+        contentView.addSubview(containerView)
+        containerView.addSubview(collectionView)
+
+        containerView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            collectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+
+            collectionView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
+            collectionView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            collectionView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            collectionView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12)
         ])
 
         let h = collectionView.heightAnchor.constraint(equalToConstant: 1)
@@ -150,7 +169,6 @@ extension CustomizationCell: UICollectionViewDataSource, UICollectionViewDelegat
             ) as? EmojiCollectionCell else {
                 return UICollectionViewCell()
             }
-
             cell.configure(emoji: emojis[indexPath.item])
             return cell
 
@@ -176,30 +194,22 @@ extension CustomizationCell: UICollectionViewDataSource, UICollectionViewDelegat
         switch section {
         case .emoji:
             if let prev = selectedEmojiIndex, prev != indexPath.item {
-                collectionView.deselectItem(
-                    at: IndexPath(item: prev, section: Section.emoji.rawValue),
-                    animated: false
-                )
+                collectionView.deselectItem(at: IndexPath(item: prev, section: Section.emoji.rawValue), animated: false)
             }
             selectedEmojiIndex = indexPath.item
             delegate?.customizationCell(self, didPickEmoji: emojis[indexPath.item])
 
         case .color:
             if let prev = selectedColorIndex, prev != indexPath.item {
-                collectionView.deselectItem(
-                    at: IndexPath(item: prev, section: Section.color.rawValue),
-                    animated: false
-                )
+                collectionView.deselectItem(at: IndexPath(item: prev, section: Section.color.rawValue), animated: false)
             }
             selectedColorIndex = indexPath.item
-
             collectionView.reloadSections(IndexSet(integer: Section.color.rawValue))
             delegate?.customizationCell(self, didPickColor: colors[indexPath.item])
         }
     }
 
-    func collectionView(_ collectionView: UICollectionView,
-                        didDeselectItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         guard let section = Section(rawValue: indexPath.section) else { return }
 
         switch section {

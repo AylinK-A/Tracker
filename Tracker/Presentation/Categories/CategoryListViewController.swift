@@ -27,16 +27,22 @@ final class CategoryListViewController: UIViewController {
     }()
 
     private lazy var addCategoryButton: UIButton = {
-        let button = UIButton(type: .system)
+        let button = UIButton(type: .custom)
         button.translatesAutoresizingMaskIntoConstraints = false
+
         button.setTitle("Добавить категорию", for: .normal)
+        button.setTitleColor(.ypWhite, for: .normal)
+        button.setTitleColor(.ypWhite.withAlphaComponent(0.6), for: .highlighted)
+
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .ypBlack
         button.layer.cornerRadius = 16
+        button.layer.masksToBounds = true
+
         button.addTarget(self, action: #selector(didTapAddCategory), for: .touchUpInside)
         return button
     }()
+
 
     // MARK: - Init
     init(viewModel: CategoryListViewModel = CategoryListViewModel()) {
@@ -72,7 +78,7 @@ final class CategoryListViewController: UIViewController {
     private func configureNavigationBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
-        appearance.backgroundColor = .ypWhite
+        appearance.backgroundColor = .ypBackground
         appearance.shadowColor = .clear
         appearance.shadowImage = UIImage()
 
@@ -120,7 +126,7 @@ final class CategoryListViewController: UIViewController {
         tableView.register(CategoryCell.self, forCellReuseIdentifier: CategoryCell.reuseIdentifier)
 
         tableView.separatorStyle = .none
-        tableView.backgroundColor = .clear
+        tableView.backgroundColor = .ypBackground
         tableView.tableFooterView = UIView()
 
         tableView.rowHeight = 75
@@ -264,4 +270,3 @@ extension CategoryListViewController: UITableViewDelegate {
         }
     }
 }
-

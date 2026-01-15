@@ -23,7 +23,7 @@ final class ScheduleCell: UITableViewCell {
     
     private lazy var containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .ypBackground
+        view.backgroundColor = .ypCellBackground
         view.layer.masksToBounds = true
         return view
     }()

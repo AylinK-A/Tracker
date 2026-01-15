@@ -8,7 +8,7 @@ final class CategoryCell: UITableViewCell {
     private let containerView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
-        v.backgroundColor = .ypBackground
+        v.backgroundColor = .ypCellBackground
         v.layer.masksToBounds = true
         return v
     }()
