@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FE019F262F196DF10096EB27 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE019F252F196DEF0096EB27 /* Notifications.swift */; };
 		FE267B6D2F0EDC85009917DE /* TrackerFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE267B6C2F0EDC82009917DE /* TrackerFilter.swift */; };
 		FE267B6F2F0EDC9F009917DE /* FiltersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE267B6E2F0EDC9D009917DE /* FiltersViewController.swift */; };
 		FE267B712F0EDCC8009917DE /* NotFoundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE267B702F0EDCC6009917DE /* NotFoundView.swift */; };
@@ -96,6 +97,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FE019F252F196DEF0096EB27 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		FE267B6C2F0EDC82009917DE /* TrackerFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerFilter.swift; sourceTree = "<group>"; };
 		FE267B6E2F0EDC9D009917DE /* FiltersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FiltersViewController.swift; sourceTree = "<group>"; };
 		FE267B702F0EDCC6009917DE /* NotFoundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotFoundView.swift; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 		FE267B982F16F7E3009917DE /* Statistics */ = {
 			isa = PBXGroup;
 			children = (
+				FE019F252F196DEF0096EB27 /* Notifications.swift */,
 				FE267B9D2F16F820009917DE /* StatisticsCardView.swift */,
 				FE267B9B2F16F803009917DE /* StatisticsViewController.swift */,
 			);
@@ -674,6 +677,7 @@
 				FEF9ECD12EFE8229006110E4 /* CategoryCell.swift in Sources */,
 				FE9671682EF09B0A0015C4F8 /* TrackerCell.swift in Sources */,
 				FE9671692EF09B0A0015C4F8 /* MainTabBarController.swift in Sources */,
+				FE019F262F196DF10096EB27 /* Notifications.swift in Sources */,
 				FE96716A2EF09B0A0015C4F8 /* CustomizationCell.swift in Sources */,
 				FE96716B2EF09B0A0015C4F8 /* CustomizationHeaderView.swift in Sources */,
 				FE96716C2EF09B0A0015C4F8 /* NewTrackerViewControllerDelegate.swift in Sources */,

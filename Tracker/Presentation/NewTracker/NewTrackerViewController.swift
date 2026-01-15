@@ -74,7 +74,6 @@ final class NewTrackerViewController: UIViewController {
         let button = UIButton(type: .custom)
         button.setTitle("Создать", for: .normal)
 
-        // ✅ текст должен быть всегда видимым
         button.setTitleColor(.white, for: .normal)
         button.setTitleColor(.white.withAlphaComponent(0.6), for: .disabled)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
@@ -83,7 +82,6 @@ final class NewTrackerViewController: UIViewController {
         button.layer.masksToBounds = true
 
         button.isEnabled = false
-        // фон выставим через updateCreateButtonUI()
         return button
     }()
 

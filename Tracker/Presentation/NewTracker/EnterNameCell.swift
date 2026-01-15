@@ -39,8 +39,6 @@ final class EnterNameCell: UITableViewCell {
     private lazy var containerView: UIView = {
         let view = UIView()
 
-        // ✅ ВАЖНО: это цвет ПЛАШКИ, а не цвет фона экрана
-        // Создай в Assets цвет ypCellBackground (Any/Dark).
         view.backgroundColor = .ypCellBackground
 
         view.layer.masksToBounds = true

@@ -35,7 +35,6 @@ final class ParameterCell: UITableViewCell {
         let imageView = UIImageView()
         imageView.image = .chevron
         imageView.contentMode = .scaleAspectFit
-        // если у chevron template-рендеринг, будет краситься динамически:
         imageView.tintColor = .tertiaryLabel
         return imageView
     }()

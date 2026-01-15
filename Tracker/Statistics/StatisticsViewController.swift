@@ -55,12 +55,31 @@ final class StatisticsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         updateUI()
+
         navigationItem.title = NSLocalizedString("tab_statistics", comment: "")
         navigationController?.navigationBar.prefersLargeTitles = true
+
+        // ✅ подписка на обновление записей трекеров
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleTrackerRecordChange),
+            name: .trackerRecordDidChange,
+            object: nil
+        )
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        updateUI()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Notification
+
+    @objc private func handleTrackerRecordChange() {
         updateUI()
     }
 
@@ -69,6 +88,7 @@ final class StatisticsViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .ypWhite
         navigationItem.title = NSLocalizedString("tab_statistics", comment: "")
+
         view.addSubview(cardsStack)
         view.addSubview(emptyStack)
 
@@ -76,7 +96,6 @@ final class StatisticsViewController: UIViewController {
         emptyStack.translatesAutoresizingMaskIntoConstraints = false
         emptyImageView.translatesAutoresizingMaskIntoConstraints = false
 
-        // фиксируем высоты карточек как в макете (90)
         [bestPeriodCard, perfectDaysCard, completedCard, averageCard].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
@@ -136,6 +155,11 @@ final class StatisticsViewController: UIViewController {
             return (id: id, date: date.excludeTime())
         }
 
+        // ✅ records может оказаться пустым после compactMap
+        guard !records.isEmpty else {
+            return Stats(bestPeriod: 0, perfectDays: 0, completedCount: 0, average: 0)
+        }
+
         let completedCount = records.count
 
         var completedByDate: [Date: Set<UUID>] = [:]
@@ -148,8 +172,8 @@ final class StatisticsViewController: UIViewController {
         var perfectDays = 0
         for (date, completedIDs) in completedByDate {
             let weekday = weekdayFrom(date)
-            let trackersForDay = allTrackers.filter { t in
-                t.schedule.isEmpty || t.schedule.contains(weekday)
+            let trackersForDay = allTrackers.filter {
+                $0.schedule.isEmpty || $0.schedule.contains(weekday)
             }
 
             guard !trackersForDay.isEmpty else { continue }
@@ -161,21 +185,31 @@ final class StatisticsViewController: UIViewController {
         }
 
         let uniqueDates = completedByDate.keys.sorted()
-        var bestPeriod = 1
-        var currentStreak = 1
 
-        for i in 1..<uniqueDates.count {
-            let prev = uniqueDates[i - 1]
-            let cur = uniqueDates[i]
-            if isNextDay(prev, cur) {
-                currentStreak += 1
-                bestPeriod = max(bestPeriod, currentStreak)
-            } else {
-                currentStreak = 1
+        var bestPeriod = 0
+        var currentStreak = 0
+
+        if !uniqueDates.isEmpty {
+            bestPeriod = 1
+            currentStreak = 1
+        }
+
+        if uniqueDates.count >= 2 {
+            for i in 1..<uniqueDates.count {
+                let prev = uniqueDates[i - 1]
+                let cur = uniqueDates[i]
+                if isNextDay(prev, cur) {
+                    currentStreak += 1
+                    bestPeriod = max(bestPeriod, currentStreak)
+                } else {
+                    currentStreak = 1
+                }
             }
         }
 
-        let average = Int(round(Double(completedCount) / Double(max(uniqueDates.count, 1))))
+        let average = Int(
+            round(Double(completedCount) / Double(max(uniqueDates.count, 1)))
+        )
 
         return Stats(
             bestPeriod: bestPeriod,
@@ -184,6 +218,8 @@ final class StatisticsViewController: UIViewController {
             average: average
         )
     }
+
+    // MARK: - Helpers
 
     private func fetchAllTrackers() -> [Tracker] {
         let cdCategories = (try? categoryStore.fetchAll()) ?? []
@@ -202,7 +238,9 @@ final class StatisticsViewController: UIViewController {
     }
 
     private func isNextDay(_ a: Date, _ b: Date) -> Bool {
-        guard let next = Calendar.current.date(byAdding: .day, value: 1, to: a) else { return false }
+        guard let next = Calendar.current.date(byAdding: .day, value: 1, to: a) else {
+            return false
+        }
         return next.excludeTime() == b.excludeTime()
     }
 }

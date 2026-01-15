@@ -44,7 +44,7 @@ final class FiltersViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            tableView.heightAnchor.constraint(equalToConstant: 75 * 4) // 4 строки по макету
+            tableView.heightAnchor.constraint(equalToConstant: 75 * 4)
         ])
     }
 }

@@ -60,7 +60,6 @@ final class TrackersListViewController: UIViewController {
         dp.calendar = Calendar(identifier: .gregorian)
         dp.timeZone = .current
 
-        // ✅ адаптивный цвет из Assets
         dp.tintColor = UIColor(named: "datePickerGray")
 
         dp.addTarget(self, action: #selector(datePickerChanged), for: .valueChanged)
@@ -278,10 +277,7 @@ final class TrackersListViewController: UIViewController {
     }
     
     private func updateDatePickerAppearance() {
-        // ✅ берём цвет из твоего Assets (Any/Dark)
         datePicker.tintColor = UIColor(named: "datePickerGray")
-
-        // убираем подложку/капсулу
         datePicker.backgroundColor = .clear
         datePicker.layer.cornerRadius = 0
         datePicker.layer.masksToBounds = false
@@ -674,7 +670,8 @@ extension TrackersListViewController: TrackerCellDelegate {
             return
         }
 
-        // перефильтровать (чтобы completed/uncompleted обновлялись)
+        NotificationCenter.default.post(name: .trackerRecordDidChange, object: nil)
+
         applySelectedDate(selectedDate)
     }
 }

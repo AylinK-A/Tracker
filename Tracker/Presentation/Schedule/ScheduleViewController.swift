@@ -81,7 +81,7 @@ final class ScheduleViewController: UIViewController {
         navigationItem.title = "Расписание"
 
         navigationController?.navigationBar.titleTextAttributes = [
-            .foregroundColor: UIColor.ypBlack, // если ypBlack у тебя динамический — ок
+            .foregroundColor: UIColor.ypBlack,
             .font: UIFont.systemFont(ofSize: 16, weight: .medium)
         ]
 

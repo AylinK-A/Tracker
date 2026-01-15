@@ -197,23 +197,29 @@ final class TrackerCell: UICollectionViewCell {
     // MARK: - Private Methods
 
     private func getDayString(_ value: Int) -> String {
+        let lang = Locale.current.languageCode ?? "en"
+
+        if lang != "ru" {
+            let key = (value == 1) ? "days_one" : "days_many"
+            return "\(value) " + NSLocalizedString(key, comment: "")
+        }
+
         let mod10 = value % 10
         let mod100 = value % 100
 
-        let word: String = {
-            switch (mod100, mod10) {
-            case (11...14, _):
-                return "дней"
-            case (_, 1):
-                return "день"
-            case (_, 2...4):
-                return "дня"
-            default:
-                return "дней"
-            }
-        }()
+        let key: String
+        if (11...14).contains(mod100) {
+            key = "days_many"
+        } else if mod10 == 1 {
+            key = "days_one"
+        } else if (2...4).contains(mod10) {
+            key = "days_few"
+        } else {
+            key = "days_many"
+        }
 
-        return "\(value) \(word)"
+        return "\(value) " + NSLocalizedString(key, comment: "")
     }
+
 }
 
