@@ -23,9 +23,19 @@ final class NewCategoryViewController: UIViewController {
     // MARK: - Setup
     private func setupTextField() {
         textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.placeholder = "Введите название категории"
 
-        textField.backgroundColor = .ypLightGray
+        textField.font = .systemFont(ofSize: 17, weight: .regular)
+        textField.textColor = .ypBlack
+
+        textField.attributedPlaceholder = NSAttributedString(
+            string: "Введите название категории",
+            attributes: [
+                .foregroundColor: UIColor.ypGray,
+                .font: UIFont.systemFont(ofSize: 17, weight: .regular)
+            ]
+        )
+
+        textField.backgroundColor = .ypCellBackground
         textField.layer.cornerRadius = 16
         textField.layer.masksToBounds = true
 
@@ -34,6 +44,7 @@ final class NewCategoryViewController: UIViewController {
 
         textField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
     }
+
 
     private func setupButton() {
         doneButton.translatesAutoresizingMaskIntoConstraints = false

@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 struct OnboardingPageModel {
     let backgroundImageName: String

@@ -1,3 +1,4 @@
+import UIKit
 import CoreData
 
 final class TrackerRecordStore: NSObject {
@@ -54,7 +55,6 @@ final class TrackerRecordStore: NSObject {
 
         let record = TrackerRecordCoreData(context: context)
         record.completionDate = normalized
-
         record.tracker = tracker
 
         try context.save()
@@ -72,6 +72,14 @@ final class TrackerRecordStore: NSObject {
         context.delete(record)
         try context.save()
         try fetchedResultsController.performFetch()
+    }
+
+    func refresh() {
+        do {
+            try fetchedResultsController.performFetch()
+        } catch {
+            print("❌ TrackerRecordStore refresh error:", error)
+        }
     }
 }
 
